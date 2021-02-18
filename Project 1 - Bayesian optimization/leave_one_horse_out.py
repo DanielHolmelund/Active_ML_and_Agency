@@ -26,3 +26,8 @@ with open('train.csv', 'w') as f:  # You will need 'wb' mode in Python 2.x
     w = csv.DictWriter(f, train.keys())
     w.writeheader()
     w.writerow(train)
+
+with open('test.csv', 'w') as f:  # You will need 'wb' mode in Python 2.x
+    w = csv.DictWriter(f, train.keys())
+    w.writeheader()
+    w.writerow(train)
