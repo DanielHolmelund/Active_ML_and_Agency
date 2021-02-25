@@ -39,7 +39,10 @@ Xtrain, Xtest, ytrain, ytest = train_test_split(df[["A","W"]], df[["engTreat5"]]
 domain = {"n_estimators": range(1, 101),
           "criterion": ['gini', 'entropy'],
           "max_depth": range(10, 60, 5),
-          "max_features": ['sqrt', 'log2']}
+          "max_features": ['sqrt', 'log2'],
+          "min_impurity_decrease": uniform(0, 0.2),
+          "ccp_alpha": uniform(0, 0.03)}
+# np.linspace(0, 0.05, 50, dtype=np.float
 # rs = RandomizedSearchCV(model, param_distributions=domain, cv=3, verbose =2, n_iter=10)
 # rs.fit(Xtrain, ytrain)
 
@@ -65,6 +68,7 @@ for params in param_list:
     #    model = RandomForestClassifier(**params, oob_score=True)
     model = RandomForestClassifier(n_estimators=params['n_estimators'], criterion=params['criterion'],
                                    max_depth=params['max_depth'], max_features=params['max_features'],
+                                   min_impurity_decrease=params["min_impurity_decrease"], ccp_alpha=params["ccp_alpha"],
                                    oob_score=True)
     start = time.time()
     model.fit(Xtrain, ytrain)
@@ -89,11 +93,16 @@ max_features = (0, 1)
 # criterion = ('gini', 'entropy')
 criterion = (0, 1)
 
+min_impurity_decrease = tuple(np.linspace(0, 0.05, 50, dtype=np.float))
+ccp_alpha = tuple(np.linspace(0, 0.03, 60, dtype= np.float))
+
 # define the dictionary for GPyOpt
 domain = [{'name': 'n_estimators', 'type': 'discrete', 'domain': n_estimators},
           {'name': 'max_depth', 'type': 'discrete', 'domain': max_depth},
           {'name': 'max_features', 'type': 'categorical', 'domain': max_features},
-          {'name': 'criterion', 'type': 'categorical', 'domain': criterion}]
+          {'name': 'criterion', 'type': 'categorical', 'domain': criterion},
+          {"name": "min_impurity_decrease", "type": "continuous", "domain": (0, 0.05)},
+          {"name": "ccp_alpha", "type": "continuous", "domain": (0, 0.03)}]
 
 
 ## we have to define the function we want to maximize --> validation accuracy,
@@ -120,7 +129,7 @@ def objective_function(x):
 
     # create the model
     model = RandomForestClassifier(n_estimators=int(param[0]), max_depth=int(param[1]), max_features=max_f,
-                                   criterion=crit, oob_score=True, n_jobs=-1)
+                                   criterion=crit, min_impurity_decrease= float(param[4]), ccp_alpha = float(param[5]), oob_score=True, n_jobs=-1)
 
     # fit the model
     model.fit(Xtrain, ytrain)
@@ -134,7 +143,7 @@ opt = GPyOpt.methods.BayesianOptimization(f=objective_function,  # function to o
                                           de_duplication=True)
 opt.acquisition.exploration_weight = 0.5
 
-opt.run_optimization(max_iter=20, eps=1e-8)
+opt.run_optimization(max_iter=20)
 
 
 x_best = opt.X[np.argmin(opt.Y)]
