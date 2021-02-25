@@ -11,8 +11,8 @@ from scipy.stats import uniform
 from sklearn.utils import shuffle
 import random
 #Setting seed
-np.random.seed(2) #Seed 34 works
-random.seed(2)
+np.random.seed(34) #Seed 34 works
+random.seed(34)
 
 ####################Download data and prepping data####################
 filename = "wasall_02445.txt"
@@ -44,7 +44,7 @@ domain = {"n_estimators": range(1, 101),
 # rs.fit(Xtrain, ytrain)
 
 # create the ParameterSampler
-param_list = list(ParameterSampler(domain, n_iter=30, random_state=32))
+param_list = list(ParameterSampler(domain, n_iter=25, random_state=32))
 print('Param list')
 print(param_list)
 # rounded_list = [dict((k,v) for (k, v) in d.items()) for d in param_list]
@@ -75,7 +75,7 @@ for params in param_list:
         current_best_oob = model_oob
         iteration_best_oob = i
 
-    max_oob_per_iteration.append(current_best_oob)
+    max_oob_per_iteration.append(1 - current_best_oob)
     i += 1
     print(f'It took {end - start} seconds')
 
@@ -131,10 +131,11 @@ def objective_function(x):
 opt = GPyOpt.methods.BayesianOptimization(f=objective_function,  # function to optimize
                                           domain=domain,  # box-constrains of the problem
                                           acquisition_type='EI',  # Select acquisition function MPI, EI, LCB
-                                          )
+                                          de_duplication=True)
 opt.acquisition.exploration_weight = 0.5
 
-opt.run_optimization(max_iter=25)
+opt.run_optimization(max_iter=20, eps=1e-8)
+
 
 x_best = opt.X[np.argmin(opt.Y)]
 print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", max_depth=" + str(
@@ -146,14 +147,15 @@ print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", max_de
 ## we can plot the maximum oob per iteration of the sequence
 
 # collect the maximum each iteration of BO, note that it is also provided by GPOpt in Y_Best
-y_bo = np.maximum.accumulate(-opt.Y).ravel()
+y_bo = 1 - np.maximum.accumulate(-opt.Y).ravel()
 # define iteration number
 xs = range(0,len(y_bo))
 
-plt.plot(xs, max_oob_per_iteration[:25], 'o-', color = 'red', label='Random Search')
+plt.plot(xs, max_oob_per_iteration, 'o-', color = 'red', label='Random Search')
 plt.plot(xs, y_bo, 'o-', color = 'blue', label='Bayesian Optimization')
 plt.legend()
 plt.xlabel('Iterations')
 plt.ylabel('Out of bag error')
 plt.title('Comparison between Random Search and Bayesian Optimization')
 plt.show()
+
