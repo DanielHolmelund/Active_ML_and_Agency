@@ -44,7 +44,7 @@ domain = {"n_estimators": range(1, 101),
 # rs.fit(Xtrain, ytrain)
 
 # create the ParameterSampler
-param_list = list(ParameterSampler(domain, n_iter=100, random_state=32))
+param_list = list(ParameterSampler(domain, n_iter=25, random_state=32))
 print('Param list')
 print(param_list)
 # rounded_list = [dict((k,v) for (k, v) in d.items()) for d in param_list]
@@ -75,7 +75,7 @@ for params in param_list:
         current_best_oob = model_oob
         iteration_best_oob = i
 
-    max_oob_per_iteration.append(current_best_oob)
+    max_oob_per_iteration.append(1 - current_best_oob)
     i += 1
     print(f'It took {end - start} seconds')
 
@@ -134,7 +134,7 @@ opt = GPyOpt.methods.BayesianOptimization(f=objective_function,  # function to o
                                           de_duplication=True)
 opt.acquisition.exploration_weight = 0.5
 
-opt.run_optimization(max_iter=95, eps=1e-8)
+opt.run_optimization(max_iter=20, eps=1e-8)
 
 
 x_best = opt.X[np.argmin(opt.Y)]
@@ -147,7 +147,7 @@ print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", max_de
 ## we can plot the maximum oob per iteration of the sequence
 
 # collect the maximum each iteration of BO, note that it is also provided by GPOpt in Y_Best
-y_bo = np.maximum.accumulate(-opt.Y).ravel()
+y_bo = 1 - np.maximum.accumulate(-opt.Y).ravel()
 # define iteration number
 xs = range(0,len(y_bo))
 
