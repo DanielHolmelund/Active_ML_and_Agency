@@ -19,17 +19,7 @@ filename = "wasall_02445_fixed.txt"
 df = pd.read_csv("wasall_02445_fixed.txt", delimiter="\t")
 del df["obsnr"]
 
-#Shuffle dataset to eliminate possible trends.
-df = shuffle(df)
-
-
 #Making the three different data sets (Inspirred by previous assignment in other course)
-
-
-#Making train and test set.
-#We will start with df_AW
-
-#Temporary hold out method.
 
 def split_by_horse(df, horse):
     test = df[df['horse'].str.match(horse)]
@@ -39,12 +29,18 @@ def split_by_horse(df, horse):
     return test, train
 
 
+df = df.sort_values(by = ["horse"])
 
 Xtrain, Xtest, ytrain, ytest = train_test_split(df[["A","W"]], df[["engTreat5"]], train_size=0.7, test_size=0.3)
-horses = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9"]
+horses = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B9"]
 iter = 25
 xs_matrix = np.empty((len(horses), iter))
 y_bo_matrix = np.empty((len(horses), iter))
+
+# initilization for model test array
+RandonSearch_diag_est_test = np.array([])
+BO_diag_est_test = np.array([])
+
 j = 0
 param_list = ["A", "W"]
 for horse in horses:
@@ -71,7 +67,7 @@ for horse in horses:
     param_list = list(ParameterSampler(domain, n_iter=iter, random_state=32))
     print('Param list')
     print(param_list)
-    # rounded_list = [dict((k,v) for (k, v) in d.items()) for d in param_list]
+    rounded_list = [dict((k,v) for (k, v) in d.items()) for d in param_list]
 
     # print('Random parameters we are going to consider')
     # print(rounded_list)
@@ -91,6 +87,7 @@ for horse in horses:
                                        max_depth=params['max_depth'], max_features=params['max_features'],
                                        min_impurity_decrease=params["min_impurity_decrease"], ccp_alpha=params["ccp_alpha"],
                                        oob_score=True)
+
         start = time.time()
         model.fit(Xtrain, ytrain)
         end = time.time()
@@ -104,6 +101,19 @@ for horse in horses:
         i += 1
         print(f'It took {end - start} seconds')
 
+
+    best_param = np.array([list(param_list[iteration_best_oob].values())[5], list(param_list[iteration_best_oob].values())[1],
+                          list(param_list[iteration_best_oob].values())[2], list(param_list[iteration_best_oob].values())[3],
+                          list(param_list[iteration_best_oob].values())[4], list(param_list[iteration_best_oob].values())[0]]).astype("object")
+
+    model = RandomForestClassifier(n_estimators = int(best_param[0]), criterion = str(best_param[1]),
+                                   max_depth = int(best_param[2]), max_features= str(best_param[3]),
+                                   min_impurity_decrease = float(best_param[4]), ccp_alpha = float(best_param[5]),
+                                   oob_score = True)
+
+    model.fit(Xtrain, ytrain)
+    y_est_test_RandomSearch_diag = model.predict(Xtest).T
+    RandonSearch_diag_est_test = np.append(RandonSearch_diag_est_test, y_est_test_RandomSearch_diag)
     ########################Bayesian Optimization##########################
     # define the domain of the considered parameters
     n_estimators = tuple(np.arange(1, 101, 1, dtype=np.int))
@@ -172,6 +182,30 @@ for horse in horses:
         x_best[1]) + ", max_features=" + str(
         x_best[2]) + ", criterion=" + str(
         x_best[3]))
+
+    x_best = x_best.astype("object")
+    # For max_features
+    if x_best[2] == 0:
+        x_best[2] = str("log2")
+    elif x_best[2] == 1:
+        x_best[2] = str("sqrt")
+    else:
+        x_best[2] = None
+
+    # For criterion
+    if x_best[3] == 0:
+        x_best[3] = str("gini")
+    else:
+        x_best[3] = str("entropy")
+
+    # Train the model with optimal hyperparameters.
+    model = RandomForestClassifier(n_estimators=int(x_best[0]), max_depth=int(x_best[1]), max_features=(x_best[2]),
+                                   criterion=str(x_best[3]), min_impurity_decrease=float(x_best[4]), ccp_alpha=float(x_best[5]),
+                                   oob_score=True, n_jobs=-1)
+    model.fit(Xtrain, ytrain)
+    y_est_test_BO_diag = model.predict(Xtest).T
+    BO_diag_est_test = np.append(BO_diag_est_test, y_est_test_BO_diag)
+
     ##########################Comparison###################################
     ## comparison between random search and bayesian optimization
     ## we can plot the maximum oob per iteration of the sequence
@@ -184,6 +218,7 @@ for horse in horses:
     xs_matrix[j, :] =  max_oob_per_iteration
     y_bo_matrix[j, :] = y_bo
 
+    print("Iteration " + str(j + 1) + " of " + str(len(horses)))
     j += 1
 
 xs_average = np.mean(xs_matrix, axis=0)
@@ -196,4 +231,20 @@ plt.xlabel('Iterations')
 plt.ylabel('Out of bag error')
 plt.title('Comparison between Random Search and Bayesian Optimization')
 plt.show()
+
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+le.fit(["Normal", "Right-fore_Left-hind", "Left-fore_Right-hind"])
+list(le.classes_)
+
+# True for the collapsed dataset
+y_true_diag = np.asarray(df[["engTreat5"]])
+
+from McNemar import mcnemar
+mcnemar(le.transform(y_true_diag),le.transform(RandonSearch_diag_est_test), le.transform(BO_diag_est_test))
+
+
+
+
+
 
