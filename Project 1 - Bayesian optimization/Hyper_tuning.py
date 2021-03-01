@@ -36,10 +36,12 @@ horses = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B9"]
 iter = 25
 xs_matrix = np.empty((len(horses), iter))
 y_bo_matrix = np.empty((len(horses), iter))
+baseline_matrix = np.empty((len(horses), iter))
 
 # initilization for model test array
 RandonSearch_diag_est_test = np.array([])
 BO_diag_est_test = np.array([])
+diag_est_test = np.array([])
 
 j = 0
 param_list = ["A", "W"]
@@ -206,6 +208,17 @@ for horse in horses:
     y_est_test_BO_diag = model.predict(Xtest).T
     BO_diag_est_test = np.append(BO_diag_est_test, y_est_test_BO_diag)
 
+    #########################No hyperparameter tuning#######################
+
+    model = RandomForestClassifier(160, criterion="gini", random_state=42, min_samples_leaf=7,
+                                              max_features="auto", n_jobs=-1, oob_score=True)
+    model.fit(Xtrain, ytrain)
+    y_est_test_diag = model.predict(Xtest).T
+    diag_est_test = np.append(diag_est_test, y_est_test_diag)
+
+    model_oob = 1-model.oob_score_
+
+
     ##########################Comparison###################################
     ## comparison between random search and bayesian optimization
     ## we can plot the maximum oob per iteration of the sequence
@@ -217,15 +230,19 @@ for horse in horses:
 
     xs_matrix[j, :] =  max_oob_per_iteration
     y_bo_matrix[j, :] = y_bo
+    baseline_matrix[j, :] = model_oob
 
     print("Iteration " + str(j + 1) + " of " + str(len(horses)))
     j += 1
 
 xs_average = np.mean(xs_matrix, axis=0)
 y_bo_average = np.mean(y_bo_matrix, axis = 0)
+baseline_matrix_average = np.mean(baseline_matrix, axis = 0)
+
 
 plt.plot(xs, xs_average, 'o-', color = 'red', label='Random Search')
 plt.plot(xs, y_bo_average, 'o-', color = 'blue', label='Bayesian Optimization')
+plt.plot(xs, baseline_matrix_average, 'o-', color = 'green', label='Baseline')
 plt.legend()
 plt.xlabel('Iterations')
 plt.ylabel('Out of bag error')
@@ -242,8 +259,8 @@ y_true_diag = np.asarray(df[["engTreat5"]])
 
 from McNemar import mcnemar
 mcnemar(le.transform(y_true_diag),le.transform(RandonSearch_diag_est_test), le.transform(BO_diag_est_test))
-
-
+mcnemar(le.transform(y_true_diag),le.transform(diag_est_test), le.transform(BO_diag_est_test))
+mcnemar(le.transform(y_true_diag),le.transform(diag_est_test), le.transform(RandonSearch_diag_est_test))
 
 
 
