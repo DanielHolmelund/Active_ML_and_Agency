@@ -46,12 +46,13 @@ diag_est_test = np.array([])
 j = 0
 param_list = ["A", "W"]
 for horse in horses:
-    Xtest, Xtrain = split_by_horse(df, horse)
+
+    Xtest, Xhorses = split_by_horse(df, horse)
     Xtest = Xtest[["A", "W"]]
-    Xtrain = Xtrain[["A", "W"]]
-    ytest, ytrain = split_by_horse(df, horse)
+    Xtrain = Xhorses[["A", "W"]]
+    ytest, yhorses = split_by_horse(df, horse)
     ytest = ytest[["engTreat5"]]
-    ytrain = ytrain[["engTreat5"]]
+    ytrain = yhorses[["engTreat5"]]
 ###########################Random search###############################
 
     # hyperparams dictionary
@@ -81,32 +82,44 @@ for horse in horses:
     iteration_best_oob = 0
     max_oob_per_iteration = []
     i = 0
-    for params in param_list:
-        print(i)
-        print(params)
-        #    model = RandomForestClassifier(**params, oob_score=True)
-        model = RandomForestClassifier(n_estimators=params['n_estimators'], criterion=params['criterion'],
-                                       max_depth=params['max_depth'], max_features=params['max_features'],
-                                       min_impurity_decrease=params["min_impurity_decrease"], ccp_alpha=params["ccp_alpha"],
-                                       oob_score=True)
 
-        start = time.time()
-        model.fit(Xtrain, ytrain)
-        end = time.time()
-        model_oob = model.oob_score_
-        print('OOB found:', model_oob)
-        if model_oob > current_best_oob:
-            current_best_oob = model_oob
-            iteration_best_oob = i
+    for horse2 in np.unique(Xhorses["horse"]):
+        Xval, Xtrain2 = split_by_horse(Xhorses, horse2)
+        Xtrain2 = Xtrain2[["A","W"]]
+        Xval = Xval[["A","W"]]
+        yval, ytrain2 = split_by_horse(yhorses, horse2)
+        ytrain2 = ytrain2[["engTreat5"]]
+        yval = yval[["engTreat5"]]
+        yval = yval.to_numpy()
+        for params in param_list:
+            print(i)
+            print(params)
+            #    model = RandomForestClassifier(**params, oob_score=True)
+            model = RandomForestClassifier(n_estimators=params['n_estimators'], criterion=params['criterion'],
+                                           max_depth=params['max_depth'], max_features=params['max_features'],
+                                           min_impurity_decrease=params["min_impurity_decrease"], ccp_alpha=params["ccp_alpha"])
 
-        max_oob_per_iteration.append(1 - current_best_oob)
-        i += 1
-        print(f'It took {end - start} seconds')
+            start = time.time()
+            model.fit(Xtrain2, ytrain2)
+            end = time.time()
+            yval_hat = model.predict(Xval)
 
 
-    best_param = np.array([list(param_list[iteration_best_oob].values())[5], list(param_list[iteration_best_oob].values())[1],
-                          list(param_list[iteration_best_oob].values())[2], list(param_list[iteration_best_oob].values())[3],
-                          list(param_list[iteration_best_oob].values())[4], list(param_list[iteration_best_oob].values())[0]]).astype("object")
+            yval_hat.shape = yval.shape
+            model_oob = 1- np.mean(yval!=yval_hat)
+            print('OOB found:', model_oob)
+            if model_oob > current_best_oob:
+                current_best_oob = model_oob
+                iteration_best_oob = i
+
+            max_oob_per_iteration.append(1 - current_best_oob)
+            i += 1
+            print(f'It took {end - start} seconds')
+
+
+        best_param = np.array([list(param_list[iteration_best_oob].values())[5], list(param_list[iteration_best_oob].values())[1],
+                              list(param_list[iteration_best_oob].values())[2], list(param_list[iteration_best_oob].values())[3],
+                              list(param_list[iteration_best_oob].values())[4], list(param_list[iteration_best_oob].values())[0]]).astype("object")
 
     model = RandomForestClassifier(n_estimators = int(best_param[0]), criterion = str(best_param[1]),
                                    max_depth = int(best_param[2]), max_features= str(best_param[3]),
