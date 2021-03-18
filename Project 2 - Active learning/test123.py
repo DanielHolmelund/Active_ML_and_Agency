@@ -10,13 +10,14 @@ from PIL import Image
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import sklearn.linear_model as lin
+import idx2numpy
+
 
 
 #data = datasets.FashionMNIST(root="Project 2 - Active learning", download=True)
 #print(data)
 
-import idx2numpy
-import numpy as np
 #os.chdir('/Users/christiandjurhuus/PycharmProjects/Active_ML_and_Agency/Project 2 - Active learning/Project 2 - Active learning/FashionMNIST/raw')
 #Getting file paths
 file_train = '/Users/christiandjurhuus/PycharmProjects/Active_ML_and_Agency/Project 2 - Active learning/Project 2 - Active learning/FashionMNIST/raw/train-images-idx3-ubyte'
@@ -50,7 +51,38 @@ ytest = ytest[5000:]
 Xpool = Xtest[:5000]
 ypool = ytest[:5000]
 
-print(Xtest.shape, Xpool.shape)
+#Defining model
+lr = lin.LogisticRegression(penalty='l2',C=1.)
+
+
+addn=2 #samples to add each time
+#randomize order of pool to avoid sampling the same subject sequentially
+order=np.random.permutation(range(len(Xpool)))
+
+#samples in the pool
+poolidx=np.arange(len(Xpool),dtype=np.int)
+ninit = 10 #initial samples
+#initial training set
+trainset=order[:ninit]
+Xtrain=np.take(Xpool,trainset,axis=0)
+ytrain=np.take(ypool,trainset,axis=0)
+#remove data from pool
+poolidx=np.setdiff1d(poolidx,trainset)
+
+model=lr
+testacc=[]
+for i in range(25):
+    #Fit model
+    model.fit(Xtrain,ytrain)
+    #predict on test set
+    ye=model.predict(Xtest)
+    #calculate and accuracy and add to list
+    testacc.append((ninit+i*addn,sklearn.metrics.accuracy_score(ytest,ye)))
+    print('Model: LR, %i random samples'%(ninit+i*addn))
+
+
+
+
 
 
 
