@@ -46,12 +46,14 @@ diag_est_test = np.array([])
 j = 0
 param_list = ["A", "W"]
 for horse in horses:
-    Xtest, Xtrain = split_by_horse(df, horse)
+
+    Xtest, Xhorses = split_by_horse(df, horse)
     Xtest = Xtest[["A", "W"]]
-    Xtrain = Xtrain[["A", "W"]]
-    ytest, ytrain = split_by_horse(df, horse)
+    Xtrain = Xhorses[["A", "W"]]
+    ytest, yhorses = split_by_horse(df, horse)
     ytest = ytest[["engTreat5"]]
-    ytrain = ytrain[["engTreat5"]]
+    ytrain = yhorses[["engTreat5"]]
+    ytest = ytest.to_numpy()
 ###########################Random search###############################
 
     # hyperparams dictionary
@@ -81,6 +83,8 @@ for horse in horses:
     iteration_best_oob = 0
     max_oob_per_iteration = []
     i = 0
+
+
     for params in param_list:
         print(i)
         print(params)
@@ -95,6 +99,7 @@ for horse in horses:
 
 
         end = time.time()
+
         model_oob = model.oob_score_
         print('OOB found:', model_oob)
         if model_oob > current_best_oob:
