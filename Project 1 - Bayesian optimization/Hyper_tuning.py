@@ -96,6 +96,8 @@ for horse in horses:
 
         start = time.time()
         model.fit(Xtrain, ytrain)
+
+
         end = time.time()
 
         model_oob = model.oob_score_
@@ -175,6 +177,7 @@ for horse in horses:
         return - model.oob_score_
 
 
+
     opt = GPyOpt.methods.BayesianOptimization(f=objective_function,  # function to optimize
                                               domain=domain,  # box-constrains of the problem
                                               acquisition_type='EI',  # Select acquisition function MPI, EI, LCB
@@ -217,6 +220,7 @@ for horse in horses:
 
     model = RandomForestClassifier(160, criterion="gini", random_state=42, min_samples_leaf=7,
                                               max_features="auto", n_jobs=-1, oob_score=True)
+
     model.fit(Xtrain, ytrain)
     y_est_test_diag = model.predict(Xtest).T
     diag_est_test = np.append(diag_est_test, y_est_test_diag)
@@ -266,7 +270,3 @@ from McNemar import mcnemar
 mcnemar(le.transform(y_true_diag),le.transform(RandonSearch_diag_est_test), le.transform(BO_diag_est_test))
 mcnemar(le.transform(y_true_diag),le.transform(diag_est_test), le.transform(BO_diag_est_test))
 mcnemar(le.transform(y_true_diag),le.transform(diag_est_test), le.transform(RandonSearch_diag_est_test))
-
-
-
-
