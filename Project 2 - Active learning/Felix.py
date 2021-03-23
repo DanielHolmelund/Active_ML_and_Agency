@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from PIL import Image
+import sklearn
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -102,13 +103,17 @@ testacc=[]
 
 for i in range(25):
     #Fit model
-    model.fit(Xtrain, ytrain)
+    model.fit(np.take(Xpool, order[:ninit+i*addn], axis = 0), np.take(ypool, order[:ninit+i*addn], axis=0))
     #predict on test set
-    ye = model.predict(Xtest)
+    y_hat = model.predict(Xtest)
     #calculate and accuracy and add to list
-    testacc.append((ninit+i*addn, sklearn.metrics.accuracy_score(ytest, ye)))
+    testacc.append((ninit+i*addn, sklearn.metrics.accuracy_score(ytest, y_hat)))
     print('Model: LR, %i random samples'%(ninit+i*addn))
-'''
+
+#Plot learning curve (test set on independent subjects)
+plt.plot(*tuple(np.array(testacc).T));
+plt.show()
+
 
 
 
