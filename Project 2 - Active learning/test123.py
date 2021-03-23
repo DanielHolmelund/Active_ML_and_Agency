@@ -1,4 +1,3 @@
-
 import torch
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -32,6 +31,16 @@ arr_test = idx2numpy.convert_from_file(file_test)
 arr_test_label = idx2numpy.convert_from_file(file_test_label)
 
 
+#Due to the size of the dataset we will start by only looking at the test set
+X = arr_test
+y = arr_test_label
+
+
+
+
+
+
+
 
 #cv.imshow("Image", arr[4], )
 #plt.imshow(arr_train[4], cmap='gray')
@@ -42,14 +51,11 @@ arr_test_label = idx2numpy.convert_from_file(file_test_label)
 #ytrain = arr_train_label[:9000]
 
 
-Xtest = arr_test
-ytest = arr_test_label
-
 #Creating pools for pool based active learning
-Xtest = np.concatenate(Xtest[5000:]).ravel()
-ytest = np.concatenate(ytest[5000:]).ravel()
-Xpool = np.concatenate(Xpool[:5000]).ravel()
-ypool = np.concatenate(ypool[:5000]).ravel()
+Xtest = np.concatenate(X[5000:]).T
+ytest = y[5000:]
+Xpool = np.concatenate(X[:5000]).T
+ypool = y[:5000]
 
 #Defining model
 lr = lin.LogisticRegression(penalty='l2',C=1.)
@@ -66,7 +72,7 @@ ninit = 10 #initial samples
 #initial training set
 trainset=order[:ninit]
 Xtrain=np.take(Xpool,trainset,axis=0)
-ytrain=np.take(ypool,trainset,axis=0)
+ytrain=np.take(ypool,trainset, axis=0)
 #remove data from pool
 poolidx=np.setdiff1d(poolidx,trainset)
 
