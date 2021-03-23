@@ -46,10 +46,10 @@ Xtest = arr_test
 ytest = arr_test_label
 
 #Creating pools for pool based active learning
-Xtest = Xtest[5000:]
-ytest = ytest[5000:]
-Xpool = Xtest[:5000]
-ypool = ytest[:5000]
+Xtest = np.concatenate(Xtest[5000:]).ravel()
+ytest = np.concatenate(ytest[5000:]).ravel()
+Xpool = np.concatenate(Xpool[:5000]).ravel()
+ypool = np.concatenate(ypool[:5000]).ravel()
 
 #Defining model
 lr = lin.LogisticRegression(penalty='l2',C=1.)
