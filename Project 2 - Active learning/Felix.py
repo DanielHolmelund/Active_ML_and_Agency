@@ -83,6 +83,8 @@ plt.show()
 lr = lin.LogisticRegression(penalty='l2',C=1.)
 
 
+#########################################Randomly increasing the training set##########################################
+
 addn = 2 #samples to add each time
 #randomize order of pool to avoid sampling the same subject sequentially
 np.random.seed(0)
@@ -115,15 +117,21 @@ plt.plot(*tuple(np.array(testacc).T));
 plt.show()
 
 
+''' 
+Så er der frit slag om hvad man vil implementere nedenunder ;-))
+'''
+
+###############################################Uncertainty sampling#####################################################
+
+
+
+###############################################Query by commitee########################################################
+
+
+
+###############################################Expected model change####################################################
 
 
 
 
-
-
-
-
-
-
-
-
+###############################################Variance reduction#######################################################
