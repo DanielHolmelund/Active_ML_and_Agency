@@ -53,6 +53,8 @@ ytest = y[5000:]
 Xpool = X[:5000].reshape(5000,784)
 ypool = y[:5000]
 
+
+'''
 #Visualizing a subsample of the data
 def show_image(x, title="", clim=None, cmap=plt.cm.gray, colorbar=False):
     ax = plt.gca()
@@ -68,8 +70,8 @@ def show_image(x, title="", clim=None, cmap=plt.cm.gray, colorbar=False):
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
 
-num_images_per_row = 6
-num_rows = 3
+num_images_per_row = 10
+num_rows = 10
 num_images = num_images_per_row * num_rows
 
 plt.figure(figsize=(20, 8))
@@ -77,22 +79,23 @@ for i in range(num_images):
     plt.subplot(num_rows, num_images_per_row, 1 + i)
     show_image(Xtest[i, :])
 plt.show()
+'''
 
 
 
 #Defining model
-lr = lin.LogisticRegression(penalty='l2',C=1.)
+lr = lin.LogisticRegression(penalty='l2',C=1., max_iter=5000)
 
 
 #########################################Randomly increasing the training set##########################################
 
-addn = 2 #samples to add each time
+addn = 1 #samples to add each time
 #randomize order of pool to avoid sampling the same subject sequentially
 np.random.seed(0)
 order = np.random.permutation(range(len(Xpool)))
 #samples in the poolx
 poolidx=np.arange(len(Xpool),dtype=int)
-ninit = 10 #initial samples
+ninit = 200 #initial samples
 #initial training set
 trainset=order[:ninit]
 print(trainset)
@@ -150,7 +153,7 @@ for i in range(25):
     ytrain = np.concatenate((ytrain, ypool[poolidx[p_sort[-addn:]]]))
 
     # removing
-    poolidx = np.setdiff1d(poolidx, p_sort[-addn:])
+    poolidx = np.setdiff1d(poolidx, poolidx[p_sort[-addn:]])
 
     print('Model: LR, %i random samples' % (len(Xtrain)))
 
@@ -160,8 +163,9 @@ plt.plot(*tuple(np.array(testacc_al).T))
 plt.legend(('random sampling','uncertainty sampling'))
 plt.show()
 
+
 ###############################################Query by commitee########################################################
-testacc_qbc = []
+testacc_qbc_LC = []
 ncomm = 10
 trainset = order[:ninit]
 Xtrain = np.take(Xpool, trainset, axis=0)
@@ -172,17 +176,19 @@ for i in range(25):
     # fill out code to do QBC by bootstrapping a commitee of LR models
 #    labels = np.zeros((ncomm, len(Xpool[poolidx]), 10))
     labels = []
+    labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
     model.fit(Xtrain, ytrain)
 
     y_hat = model.predict(Xtest)
 
-    testacc_qbc.append((len(Xtrain), (y_hat == ytest).mean()))
+    testacc_qbc_LC.append((len(Xtrain), (y_hat == ytest).mean()))
 
     for j in range(ncomm):
-        xtr, ytr = resample(Xtrain, ytrain, n_samples=15, replace=True, stratify=ytrain)
+        xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
         model.fit(xtr, ytr)
-        labels.append(model.predict_proba(Xpool[poolidx]))
-#        labels[j] = model.predict_proba(Xpool[poolidx])
+        labels.append(model.predict(Xpool[poolidx]))
+
+    #Least confident
 
     ypool_p=(np.mean(np.array(labels)==0,0),
              np.mean(np.array(labels)==1,0),
@@ -197,31 +203,77 @@ for i in range(25):
     ypool_p = np.array(ypool_p).T
     ypool_p_idx = np.argsort(-np.max(ypool_p, 1)) #Least confident
 
-#    disagree = -np.abs(0.5 - (labels[:, :, 0] > 0.5).mean(0))  # max disagreement
-
-    # Sorting disagreements
-#    disagree_sort = np.argsort(disagree)
-
     # Now lets add them to the training set and remove them from the pool
     # adding
     Xtrain = np.concatenate((Xtrain, Xpool[poolidx[ypool_p_idx[-addn:]]]))
     ytrain = np.concatenate((ytrain, ypool[poolidx[ypool_p_idx[-addn:]]]))
 
     # removing
-    poolidx = np.setdiff1d(poolidx, ypool_p_idx[-addn:])
+    poolidx = np.setdiff1d(poolidx, poolidx[ypool_p_idx[-addn:]])
 
     print('Model: LR, %i random samples' % (len(Xtrain)))
 
 #Plot learning curve
 plt.plot(*tuple(np.array(testacc).T));
 plt.plot(*tuple(np.array(testacc_al).T));
-plt.plot(*tuple(np.array(testacc_qbc).T));
-plt.legend(('random sampling','uncertainty sampling','QBC'));
+plt.plot(*tuple(np.array(testacc_qbc_LC).T));
+plt.legend(('random sampling', 'Uncertainty sampling','QBC LC'));
+plt.show()
 
 
-###############################################Expected model change####################################################
+#Entropy
+testacc_qbc_entropy = []
+ncomm = 10
+trainset = order[:ninit]
+Xtrain = np.take(Xpool, trainset, axis=0)
+ytrain = np.take(ypool, trainset, axis=0)
+poolidx = np.arange(len(Xpool), dtype=np.int)
+poolidx = np.setdiff1d(poolidx, trainset)
+for i in range(25):
+    # fill out code to do QBC by bootstrapping a commitee of LR models
+#    labels = np.zeros((ncomm, len(Xpool[poolidx]), 10))
+    labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
+    model.fit(Xtrain, ytrain)
+
+    y_hat = model.predict(Xtest)
+
+    testacc_qbc_entropy.append((len(Xtrain), (y_hat == ytest).mean()))
+
+    for j in range(ncomm):
+        xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
+        model.fit(xtr, ytr)
+        labels_entropy[j] = model.predict_proba(Xpool[poolidx])
+
+    #Entropy
+    disagree = -np.abs(0.5 - (labels_entropy[:,:,0] > 0.5).mean(0))  # max disagreement
+    disagree_sort = np.argsort(disagree)
+
+    # Now lets add them to the training set and remove them from the pool
+    # adding
+    Xtrain = np.concatenate((Xtrain, Xpool[poolidx[disagree_sort[-addn:]]]))
+    ytrain = np.concatenate((ytrain, ypool[poolidx[disagree_sort[-addn:]]]))
+
+    # removing
+    poolidx = np.setdiff1d(poolidx, poolidx[disagree_sort[-addn:]])
+
+    print('Model: LR, %i random samples' % (len(Xtrain)))
+
+#Plot learning curve
+plt.plot(*tuple(np.array(testacc).T));
+plt.plot(*tuple(np.array(testacc_al).T));
+plt.plot(*tuple(np.array(testacc_qbc_LC).T));
+plt.plot(*tuple(np.array(testacc_qbc_entropy).T));
+plt.legend(('random sampling', 'Uncertainty sampling','QBC LC', 'QBC Vote entropy'));
+plt.show()
+
+
+###############################################Expected Improvement####################################################
 
 
 
 
 ###############################################Variance reduction#######################################################
+
+
+###############################################Density weighting#######################################################
+
