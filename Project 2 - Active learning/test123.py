@@ -89,13 +89,13 @@ lr = lin.LogisticRegression(penalty='l2',C=1., max_iter=5000)
 
 #########################################Randomly increasing the training set##########################################
 
-addn = 1 #samples to add each time
+addn = 5 #samples to add each time
 #randomize order of pool to avoid sampling the same subject sequentially
 np.random.seed(0)
 order = np.random.permutation(range(len(Xpool)))
 #samples in the poolx
 poolidx=np.arange(len(Xpool),dtype=int)
-ninit = 20 #initial samples
+ninit = 200 #initial samples
 #initial training set
 trainset=order[:ninit]
 print(trainset)
@@ -107,7 +107,7 @@ poolidx=np.setdiff1d(poolidx,trainset)
 model=lr
 testacc=[]
 
-for i in range(25):
+for i in range(50):
     #Fit model
     model.fit(np.take(Xpool, order[:ninit+i*addn], axis = 0), np.take(ypool, order[:ninit+i*addn], axis=0))
     #predict on test set
@@ -137,7 +137,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(25):
+for i in range(50):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -169,7 +169,7 @@ plt.show()
 '''
 
 
-#Largest margin
+#Margin sampling
 
 testacc_al_LM = []
 trainset = order[:ninit]
@@ -178,7 +178,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(25):
+for i in range(50):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -189,18 +189,21 @@ for i in range(25):
     # Getting label probabilities
     p = model.predict_proba(Xpool[poolidx])
     # Sorting the probabilites to find the least confident
+
     ix = np.arange(len(p))
     p2, p1 = p.argsort(1)[:, -2:].T
     res = p[ix, p1] - p[ix, p2]
-    p_LM_sort = np.argsort(1 - res)
+    p_LM_sort = np.argsort(res)
+
+#    p_LM_sort = np.argsort(np.sort(p, axis=1)[:,-1] - np.sort(p, axis=1)[:,-2] )
 
     # Now lets add them to the training set and remove them from the pool
     # adding
-    Xtrain = np.concatenate((Xtrain, Xpool[poolidx[p_LM_sort[-addn:]]]))
-    ytrain = np.concatenate((ytrain, ypool[poolidx[p_LM_sort[-addn:]]]))
+    Xtrain = np.concatenate((Xtrain, Xpool[poolidx[p_LM_sort[:addn]]]))
+    ytrain = np.concatenate((ytrain, ypool[poolidx[p_LM_sort[:addn]]]))
 
     # removing
-    poolidx = np.setdiff1d(poolidx, poolidx[p_LM_sort[addn:]])
+    poolidx = np.setdiff1d(poolidx, poolidx[p_LM_sort[:addn]])
 
     print('Model: LR, %i random samples' % (len(Xtrain)))
 
@@ -213,7 +216,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(25):
+for i in range(50):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
