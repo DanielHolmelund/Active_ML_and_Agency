@@ -86,6 +86,8 @@ plt.show()
 #Defining model
 lr = lin.LogisticRegression(penalty='l2',C=1., max_iter=5000)
 
+#Number of iterations
+N = 80
 
 #########################################Randomly increasing the training set##########################################
 
@@ -107,7 +109,7 @@ poolidx=np.setdiff1d(poolidx,trainset)
 model=lr
 testacc=[]
 
-for i in range(80):
+for i in range(N):
     #Fit model
     model.fit(np.take(Xpool, order[:ninit+i*addn], axis = 0), np.take(ypool, order[:ninit+i*addn], axis=0))
     #predict on test set
@@ -137,7 +139,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(80):
+for i in range(N):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -158,7 +160,7 @@ for i in range(80):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_sort[-addn:]])
 
-    print('Model: LC, %i Least confident sampling' % (len(Xtrain)))
+    print('Model: LR, %i Least confident sampling' % (len(Xtrain)))
 
 
 '''#Plot learning curve
@@ -178,7 +180,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(80):
+for i in range(N):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -205,7 +207,7 @@ for i in range(80):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_LM_sort[:addn]])
 
-    print('Model: MM, %i Maximum margin sampling' % (len(Xtrain)))
+    print('Model: LR, %i Maximum margin sampling' % (len(Xtrain)))
 
 #Entropy
 
@@ -216,7 +218,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(80):
+for i in range(N):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -238,16 +240,45 @@ for i in range(80):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[idx_entropy[-addn:]])
 
-    print('Model: E, %i Entropy samples' % (len(Xtrain)))
+    print('Model: LR, %i Entropy samples' % (len(Xtrain)))
 
+#Determine 95% confidence intervals
+#RM
+x_samples = [x[0] for x in testacc]
+x_samples = np.asarray(x_samples)
+accuracies_RS = [x[1] for x in testacc]
+accuracies_RS = np.asarray(accuracies_RS)
+CI_RS = 1.96 * np.sqrt(((1-accuracies_RS)*(1-(1-accuracies_RS)))/x_samples)
+#LS
+accuracies_LS = [x[1] for x in testacc_al]
+accuracies_LS = np.asarray(accuracies_LS)
+CI_AL = 1.96 * np.sqrt(((1-accuracies_LS)*(1-(1-accuracies_LS)))/x_samples)
+#MS
+accuracies_MS = [x[1] for x in testacc_al_LM]
+accuracies_MS = np.asarray(accuracies_MS)
+CI_MS = 1.96 * np.sqrt(((1-accuracies_MS)*(1-(1-accuracies_MS)))/x_samples)
+#E
+accuracies_E = [x[1] for x in testacc_al_Entropy]
+accuracies_E = np.asarray(accuracies_E)
+CI_E = 1.96 * np.sqrt(((1-accuracies_E)*(1-(1-accuracies_E)))/x_samples)
 
+#Uncomment the errorbar commands to display 95% confidence interval
 
 #Plot learning curve
 plt.plot(*tuple(np.array(testacc).T))
+#plt.errorbar(*tuple(np.array(testacc).T), CI_RS)
+#plt.fill_between(x_samples, (accuracies_RS-CI_RS), (accuracies_RS+CI_RS), color='b', alpha=.1)
+
 plt.plot(*tuple(np.array(testacc_al).T))
+#plt.errorbar(*tuple(np.array(testacc_al).T), CI_AL)
+
 plt.plot(*tuple(np.array(testacc_al_LM).T))
+#plt.errorbar(*tuple(np.array(testacc_al_LM).T), CI_MS)
+
 plt.plot(*tuple(np.array(testacc_al_Entropy).T))
-plt.legend(('random sampling','LC','LM','Entropy'))
+#plt.errorbar(*tuple(np.array(testacc_al_Entropy).T), CI_E)
+
+plt.legend(('random sampling','LC','MS','Entropy'))
 plt.show()
 
 '''
