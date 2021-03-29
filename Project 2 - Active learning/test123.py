@@ -107,7 +107,7 @@ poolidx=np.setdiff1d(poolidx,trainset)
 model=lr
 testacc=[]
 
-for i in range(50):
+for i in range(80):
     #Fit model
     model.fit(np.take(Xpool, order[:ninit+i*addn], axis = 0), np.take(ypool, order[:ninit+i*addn], axis=0))
     #predict on test set
@@ -137,7 +137,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(50):
+for i in range(80):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -158,7 +158,7 @@ for i in range(50):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_sort[-addn:]])
 
-    print('Model: LR, %i random samples' % (len(Xtrain)))
+    print('Model: LC, %i Least confident sampling' % (len(Xtrain)))
 
 
 '''#Plot learning curve
@@ -178,7 +178,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(50):
+for i in range(80):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -205,7 +205,7 @@ for i in range(50):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_LM_sort[:addn]])
 
-    print('Model: LR, %i random samples' % (len(Xtrain)))
+    print('Model: MM, %i Maximum margin sampling' % (len(Xtrain)))
 
 #Entropy
 
@@ -216,7 +216,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(50):
+for i in range(80):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -238,7 +238,7 @@ for i in range(50):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[idx_entropy[-addn:]])
 
-    print('Model: LR, %i random samples' % (len(Xtrain)))
+    print('Model: E, %i Entropy samples' % (len(Xtrain)))
 
 
 
