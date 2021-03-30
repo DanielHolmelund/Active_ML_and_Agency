@@ -20,7 +20,7 @@ import idx2numpy
 #data = datasets.FashionMNIST(root="Project 2 - Active learning", download=True)
 #print(data)
 
-os.chdir('/Users/christiandjurhuus/PycharmProjects/Active_ML_and_Agency/Project 2 - Active learning/Project 2 - Active learning/FashionMNIST/raw')
+os.chdir('/Users/yeganehghamari/Active_ML_and_Agency1/Project 2 - Active learning/Project 2 - Active learning/FashionMNIST/raw')
 #Getting file paths
 file_train = 'train-images-idx3-ubyte'
 file_test = 't10k-images-idx3-ubyte'
@@ -86,14 +86,12 @@ plt.show()
 #Defining model
 lr = lin.LogisticRegression(penalty='l2',C=1., max_iter=5000)
 
-#Number of iterations
-N = 80
 
 #########################################Randomly increasing the training set##########################################
 
 addn = 5 #samples to add each time
 #randomize order of pool to avoid sampling the same subject sequentially
-np.random.seed(0)
+np.random.seed(3)
 order = np.random.permutation(range(len(Xpool)))
 #samples in the poolx
 poolidx=np.arange(len(Xpool),dtype=int)
@@ -109,7 +107,7 @@ poolidx=np.setdiff1d(poolidx,trainset)
 model=lr
 testacc=[]
 
-for i in range(N):
+for i in range(80):
     #Fit model
     model.fit(np.take(Xpool, order[:ninit+i*addn], axis = 0), np.take(ypool, order[:ninit+i*addn], axis=0))
     #predict on test set
@@ -129,7 +127,7 @@ Så er der frit slag om hvad man vil implementere nedenunder ;-))
 '''
 
 ###############################################Uncertainty sampling#####################################################
-
+'''
 ###Least confidence
 
 testacc_al = []
@@ -139,7 +137,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(N):
+for i in range(25):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -160,15 +158,15 @@ for i in range(N):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_sort[-addn:]])
 
-    print('Model: LR, %i Least confident sampling' % (len(Xtrain)))
+    print('Model: LC, %i Least confident sampling' % (len(Xtrain)))
 
 
-'''#Plot learning curve
+#Plot learning curve
 plt.plot(*tuple(np.array(testacc).T))
 plt.plot(*tuple(np.array(testacc_al).T))
 plt.legend(('random sampling','uncertainty sampling'))
 plt.show()
-'''
+
 
 
 #Margin sampling
@@ -180,7 +178,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(N):
+for i in range(25):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -207,7 +205,7 @@ for i in range(N):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_LM_sort[:addn]])
 
-    print('Model: LR, %i Maximum margin sampling' % (len(Xtrain)))
+    print('Model: MM, %i Maximum margin sampling' % (len(Xtrain)))
 
 #Entropy
 
@@ -218,7 +216,7 @@ ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
 
-for i in range(N):
+for i in range(25):
     # fill out code to select samples according to uncertainty here
     model.fit(Xtrain, ytrain)
 
@@ -240,49 +238,21 @@ for i in range(N):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[idx_entropy[-addn:]])
 
-    print('Model: LR, %i Entropy samples' % (len(Xtrain)))
+    print('Model: E, %i Entropy samples' % (len(Xtrain)))
 
-#Determine 95% confidence intervals
-#RM
-x_samples = [x[0] for x in testacc]
-x_samples = np.asarray(x_samples)
-accuracies_RS = [x[1] for x in testacc]
-accuracies_RS = np.asarray(accuracies_RS)
-CI_RS = 1.96 * np.sqrt(((1-accuracies_RS)*(1-(1-accuracies_RS)))/x_samples)
-#LS
-accuracies_LS = [x[1] for x in testacc_al]
-accuracies_LS = np.asarray(accuracies_LS)
-CI_AL = 1.96 * np.sqrt(((1-accuracies_LS)*(1-(1-accuracies_LS)))/x_samples)
-#MS
-accuracies_MS = [x[1] for x in testacc_al_LM]
-accuracies_MS = np.asarray(accuracies_MS)
-CI_MS = 1.96 * np.sqrt(((1-accuracies_MS)*(1-(1-accuracies_MS)))/x_samples)
-#E
-accuracies_E = [x[1] for x in testacc_al_Entropy]
-accuracies_E = np.asarray(accuracies_E)
-CI_E = 1.96 * np.sqrt(((1-accuracies_E)*(1-(1-accuracies_E)))/x_samples)
 
-#Uncomment the errorbar commands to display 95% confidence interval
 
 #Plot learning curve
 plt.plot(*tuple(np.array(testacc).T))
-#plt.errorbar(*tuple(np.array(testacc).T), CI_RS)
-#plt.fill_between(x_samples, (accuracies_RS-CI_RS), (accuracies_RS+CI_RS), color='b', alpha=.1)
-
 plt.plot(*tuple(np.array(testacc_al).T))
-#plt.errorbar(*tuple(np.array(testacc_al).T), CI_AL)
-
 plt.plot(*tuple(np.array(testacc_al_LM).T))
-#plt.errorbar(*tuple(np.array(testacc_al_LM).T), CI_MS)
-
 plt.plot(*tuple(np.array(testacc_al_Entropy).T))
-#plt.errorbar(*tuple(np.array(testacc_al_Entropy).T), CI_E)
-
-plt.legend(('random sampling','LC','MS','Entropy'))
+plt.legend(('random sampling','LC','LM','Entropy'))
 plt.show()
-
 '''
+
 ###############################################Query by commitee########################################################
+############QBC LC #######################
 testacc_qbc_LC = []
 ncomm = 10
 trainset = order[:ninit]
@@ -290,19 +260,19 @@ Xtrain = np.take(Xpool, trainset, axis=0)
 ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
-for i in range(25):
-    # fill out code to do QBC by bootstrapping a commitee of LR models
-#    labels = np.zeros((ncomm, len(Xpool[poolidx]), 10))
+for i in range(80):
+
+    #labels = []
+    #labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
+    #model.fit(Xtrain, ytrain)
+
+    #y_hat = model.predict(Xtest)
+
+    #testacc_qbc_LC.append((len(Xtrain), (y_hat == ytest).mean()))
     labels = []
-    labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
-    model.fit(Xtrain, ytrain)
-
-    y_hat = model.predict(Xtest)
-
-    testacc_qbc_LC.append((len(Xtrain), (y_hat == ytest).mean()))
-
     for j in range(ncomm):
-        xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
+        #xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
+        xtr, ytr = resample(Xtrain, ytrain, stratify=ytrain)
         model.fit(xtr, ytr)
         labels.append(model.predict(Xpool[poolidx]))
 
@@ -319,7 +289,14 @@ for i in range(25):
              np.mean(np.array(labels)==8,0),
              np.mean(np.array(labels)==9,0))
     ypool_p = np.array(ypool_p).T
-    ypool_p_idx = np.argsort(-np.max(ypool_p, 1)) #Least confident
+    print(np.shape(ypool_p))
+
+    #refit the model in all training set
+    model.fit(Xtrain, ytrain)
+    ye = model.predict(Xtest)
+    testacc_qbc_LC.append((len(Xtrain), sklearn.metrics.accuracy_score(ytest, ye)))
+    # select sample with maximum disagreement (least confident) -> ones with least most probable class probabilities in each row of ypool_p
+    ypool_p_idx = np.argsort(1-np.max(ypool_p, 1)) #Least confident
 
     # Now lets add them to the training set and remove them from the pool
     # adding
@@ -332,13 +309,15 @@ for i in range(25):
     print('Model: LR, %i random samples' % (len(Xtrain)))
 
 #Plot learning curve
+'''
 plt.plot(*tuple(np.array(testacc).T));
 plt.plot(*tuple(np.array(testacc_al).T));
 plt.plot(*tuple(np.array(testacc_qbc_LC).T));
 plt.legend(('random sampling', 'Uncertainty sampling','QBC LC'));
 plt.show()
+'''
 
-#Trying to implement standard entropy
+######################### QBC Entropy########
 testacc_qbc_entropy = []
 ncomm = 10
 trainset = order[:ninit]
@@ -346,7 +325,134 @@ Xtrain = np.take(Xpool, trainset, axis=0)
 ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
-for i in range(25):
+for i in range(80):
+
+    #labels = []
+    #labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
+    #model.fit(Xtrain, ytrain)
+
+    #y_hat = model.predict(Xtest)
+
+    #testacc_qbc_LC.append((len(Xtrain), (y_hat == ytest).mean()))
+    labels = []
+    for j in range(ncomm):
+        #xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
+        xtr, ytr = resample(Xtrain, ytrain, stratify=ytrain)
+        model.fit(xtr, ytr)
+        labels.append(model.predict(Xpool[poolidx]))
+
+    #Least confident
+
+    ypool_p=(np.mean(np.array(labels)==0,0),
+             np.mean(np.array(labels)==1,0),
+             np.mean(np.array(labels)==2,0),
+             np.mean(np.array(labels)==3,0),
+             np.mean(np.array(labels)==4,0),
+             np.mean(np.array(labels)==5,0),
+             np.mean(np.array(labels)==6,0),
+             np.mean(np.array(labels)==7,0),
+             np.mean(np.array(labels)==8,0),
+             np.mean(np.array(labels)==9,0))
+    ypool_p = np.array(ypool_p).T
+    print(np.shape(ypool_p))
+
+    #refit the model in all training set
+    model.fit(Xtrain, ytrain)
+    ye = model.predict(Xtest)
+    testacc_qbc_entropy.append((len(Xtrain), sklearn.metrics.accuracy_score(ytest, ye)))
+    # select sample with maximum disagreement (least confident) -> ones with least most probable class probabilities in each row of ypool_p
+    ypool_p_idx_entropy = np.argsort(-np.sum(np.multiply(ypool_p, np.log2(ypool_p)), 1)) #entropy
+    # Now lets add them to the training set and remove them from the pool
+    # adding
+    Xtrain = np.concatenate((Xtrain, Xpool[poolidx[ypool_p_idx_entropy[-addn:]]])) #the first two that are max
+    ytrain = np.concatenate((ytrain, ypool[poolidx[ypool_p_idx_entropy[-addn:]]]))
+
+    # removing
+    poolidx = np.setdiff1d(poolidx, poolidx[ypool_p_idx_entropy[-addn:]])
+
+    print('Model: MS, %i random samples' % (len(Xtrain)))
+
+############## QBC marginal #################
+testacc_qbc_MS = []
+ncomm = 10
+trainset = order[:ninit]
+Xtrain = np.take(Xpool, trainset, axis=0)
+ytrain = np.take(ypool, trainset, axis=0)
+poolidx = np.arange(len(Xpool), dtype=np.int)
+poolidx = np.setdiff1d(poolidx, trainset)
+for i in range(80):
+
+    #labels = []
+    #labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
+    #model.fit(Xtrain, ytrain)
+
+    #y_hat = model.predict(Xtest)
+
+    #testacc_qbc_LC.append((len(Xtrain), (y_hat == ytest).mean()))
+    labels = []
+    for j in range(ncomm):
+        #xtr, ytr = resample(Xtrain, ytrain, n_samples=len(Xtrain), replace=True, stratify=ytrain)
+        xtr, ytr = resample(Xtrain, ytrain, stratify=ytrain)
+        model.fit(xtr, ytr)
+        labels.append(model.predict(Xpool[poolidx]))
+
+    #Least confident
+
+    ypool_p=(np.mean(np.array(labels)==0,0),
+             np.mean(np.array(labels)==1,0),
+             np.mean(np.array(labels)==2,0),
+             np.mean(np.array(labels)==3,0),
+             np.mean(np.array(labels)==4,0),
+             np.mean(np.array(labels)==5,0),
+             np.mean(np.array(labels)==6,0),
+             np.mean(np.array(labels)==7,0),
+             np.mean(np.array(labels)==8,0),
+             np.mean(np.array(labels)==9,0))
+    ypool_p = np.array(ypool_p).T
+    print(np.shape(ypool_p))
+
+    #refit the model in all training set
+    model.fit(Xtrain, ytrain)
+    ye = model.predict(Xtest)
+    testacc_qbc_MS.append((len(Xtrain), sklearn.metrics.accuracy_score(ytest, ye)))
+    # select sample with maximum disagreement (least confident) -> ones with least most probable class probabilities in each row of ypool_p
+
+    ix = np.arange(len(ypool_p))
+    p2, p1 = ypool_p.argsort(1)[:, -2:].T  # 2*poolsize, p2 <p1
+    res = ypool_p[ix, p1] - ypool_p[ix, p2]
+    ypool_p_idx_MS = np.argsort(res) #marginal
+
+
+    # Now lets add them to the training set and remove them from the pool
+    # adding
+    Xtrain = np.concatenate((Xtrain, Xpool[poolidx[ypool_p_idx_MS[:addn]]])) #the first two that are min
+    ytrain = np.concatenate((ytrain, ypool[poolidx[ypool_p_idx_MS[:addn]]]))
+
+    # removing
+    poolidx = np.setdiff1d(poolidx, poolidx[ypool_p_idx_MS[:addn]])
+
+    print('Model: MS, %i random samples' % (len(Xtrain)))
+
+#Plot learning curve
+plt.plot(*tuple(np.array(testacc_qbc_LC).T));
+plt.plot(*tuple(np.array(testacc_qbc_entropy).T));
+plt.plot(*tuple(np.array(testacc_qbc_MS).T));
+plt.plot(*tuple(np.array(testacc).T));
+plt.legend(('QBC LC', 'QBC entropy', 'QBC least marginal', 'random sampling'));
+plt.show()
+
+
+
+'''  
+#standard entropy
+testacc_qbc_entropy = []
+ncomm = 5
+trainset = order[:ninit]
+Xtrain = np.take(Xpool, trainset, axis=0)
+ytrain = np.take(ypool, trainset, axis=0)
+poolidx = np.arange(len(Xpool), dtype=np.int)
+poolidx = np.setdiff1d(poolidx, trainset)
+for i in range(10):
     # fill out code to do QBC by bootstrapping a commitee of LR models
 #    labels = np.zeros((ncomm, len(Xpool[poolidx]), 10))
     labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
@@ -382,17 +488,16 @@ plt.plot(*tuple(np.array(testacc_qbc_LC).T));
 plt.plot(*tuple(np.array(testacc_qbc_entropy).T));
 plt.legend(('random sampling', 'Uncertainty sampling','QBC LC', 'QBC Vote entropy'));
 plt.show()
-'''
-'''
+
 #Vote Entropy
 testacc_qbc_vote_entropy = []
-ncomm = 10
+ncomm = 5
 trainset = order[:ninit]
 Xtrain = np.take(Xpool, trainset, axis=0)
 ytrain = np.take(ypool, trainset, axis=0)
 poolidx = np.arange(len(Xpool), dtype=np.int)
 poolidx = np.setdiff1d(poolidx, trainset)
-for i in range(25):
+for i in range(10):
     # fill out code to do QBC by bootstrapping a commitee of LR models
 #    labels = np.zeros((ncomm, len(Xpool[poolidx]), 10))
     labels_entropy = np.zeros((ncomm,len(Xpool[poolidx]),10))
@@ -420,8 +525,10 @@ for i in range(25):
     poolidx = np.setdiff1d(poolidx, poolidx[disagree_sort[-addn:]])
 
     print('Model: LR, %i random samples' % (len(Xtrain)))
+'''
 
-#Plot learning curve
+
+'''
 plt.plot(*tuple(np.array(testacc).T));
 plt.plot(*tuple(np.array(testacc_al).T));
 plt.plot(*tuple(np.array(testacc_qbc_LC).T));
@@ -429,12 +536,6 @@ plt.plot(*tuple(np.array(testacc_qbc_entropy).T));
 plt.legend(('random sampling', 'Uncertainty sampling','QBC LC', 'QBC Vote entropy'));
 plt.show()
 '''
-
-
-###############################################Expected Improvement####################################################
-
-
-
 
 ###############################################Density weighting#######################################################
 
