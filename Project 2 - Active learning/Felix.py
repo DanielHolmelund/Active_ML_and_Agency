@@ -152,7 +152,7 @@ for i in range(25):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_sort[-addn:]])
 
-    print('Model: LR, %i random samples' % (len(Xtrain)))
+    print('Model: LR, %i US least confident' % (len(Xtrain)))
 
 testacc_al_margin = []
 trainset = order[:ninit]
@@ -183,14 +183,14 @@ for i in range(25):
     # removing
     poolidx = np.setdiff1d(poolidx, poolidx[p_sort[:addn]])
 
-    print('Model: LR, %i random samples' % (len(Xtrain)))
+    print('Model: LR, %i US margin sampling' % (len(Xtrain)))
 print(testacc_al_margin)
 
 #Plot learning curve
 plt.plot(*tuple(np.array(testacc).T))
 plt.plot(*tuple(np.array(testacc_al).T))
 plt.plot(*tuple(np.array(testacc_al_margin).T))
-plt.legend(('random sampling','uncertainty sampling'))
+plt.legend(('random sampling','US least confident', 'US margin sampling'))
 plt.show()
 
 
