@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
 
-file_name = "data_85.csv"
+file_name = "data_211_K=0.csv"
 #data = np.genfromtxt("data_85.csv", delimiter = ",")
 #print(data)
 
@@ -17,8 +17,7 @@ fig = plt.figure(1)
 
 df = pd.read_csv(file_name)
 df = df.drop(df.columns[0], axis = 1)
-#df = df.iloc[df["I"]>-0.5: df["I"] < 0.5]
-#
+
 
 k = 0
 name = df.columns
